@@ -22,12 +22,6 @@ matrix:
         - otp_release: 18.3
           dist: trusty
           env: COWBOY_VERSION=1.1.2
-        - otp_release: 17.5
-          dist: trusty
-          env: COWBOY_VERSION=1.1.2
-        - otp_release: R16B03-1
-          dist: trusty
-          env: COWBOY_VERSION=1.1.2
 cache:
     directories:
         - $HOME/.cache/rebar3
@@ -42,8 +36,8 @@ install:
     - make bootstrap_front_end
 script:
     - kiex use "$ELIXIR_VERSION" && make test
-    - if [ $TRAVIS_OTP_RELEASE = "20.3" ]; then make test_front_end; fi
-    - if [ $TRAVIS_OTP_RELEASE = "20.3" ]; then make doc dialyzer; fi
-    - if [ $TRAVIS_OTP_RELEASE = "17.5" ]; then make dialyzer; fi   # run dialyzer with cowboy 1.x too
+    - if [ $TRAVIS_OTP_RELEASE = "21.3" ]; then make test_front_end; fi
+    - if [ $TRAVIS_OTP_RELEASE = "21.3" ]; then make doc dialyzer; fi
+    - if [ $TRAVIS_OTP_RELEASE = "18.3" ]; then make dialyzer; fi   # run dialyzer with cowboy 1.x too
 after_success:
-    - if [ $TRAVIS_OTP_RELEASE = "20.3" ]; then ./rebar3 as test coveralls send; fi
+    - if [ $TRAVIS_OTP_RELEASE = "21.3" ]; then ./rebar3 as test coveralls send; fi

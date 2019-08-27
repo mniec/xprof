@@ -157,7 +157,7 @@ handle_info({trace_ts, _Spawner, spawn, NewProc, _MFArgs,_TimeStamp},
                 _ -> 0.0
             end,
 
-    case random_uniform() < Sample of
+    case rand:uniform() < Sample of
         true ->
             catch erlang:trace(NewProc, true, [call, procs, timestamp]);
         false ->
@@ -255,13 +255,3 @@ put_pid(MFA, Pid) ->
 -spec erase_pid(xprof_core:mfa_id()) -> pid() | undefined.
 erase_pid(MFA) ->
     erase({handler, MFA}).
-
-%% the rand module was introduced in OTP 18.0
-%% and random module was deprecated in OTP 19.0
--ifndef(before_OTP_18).
-random_uniform() ->
-    rand:uniform().
--else.
-random_uniform() ->
-    random:uniform().
--endif.

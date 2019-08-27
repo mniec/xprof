@@ -167,7 +167,7 @@ do_new(Table, Min, Max, Precision)
        andalso 1 =< Precision andalso Precision =< 5 ->
 
     LargestValueWithSingleUnitResolution = 2 * math:pow(10, Precision),
-    SubBucketCountMagnitude = int_ceil(math_log2(LargestValueWithSingleUnitResolution)),
+    SubBucketCountMagnitude = int_ceil(math:log2(LargestValueWithSingleUnitResolution)),
 
     SubBucketHalfCountMagnitude =
         case SubBucketCountMagnitude < 1 of
@@ -176,7 +176,7 @@ do_new(Table, Min, Max, Precision)
         end,
 
     UnitMagnitude =
-        case int_floor(math_log2(Min)) of
+        case int_floor(math:log2(Min)) of
             N when N < 0 -> 0;
             N -> N
         end,
@@ -531,18 +531,5 @@ int_floor(F) ->
     if R > F -> R - 1;
        true -> R
     end.
-
--endif.
-
--ifdef(before_OTP_18).
-
-math_log2(V) ->
-    math:log(V)/math:log(2).
-
--else.
-
-%% math:log2 was introduced in OTP 18
-math_log2(V) ->
-    math:log2(V).
 
 -endif.

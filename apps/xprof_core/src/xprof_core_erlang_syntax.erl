@@ -249,32 +249,11 @@ rest_from_tokens([FirstToken|_], OrigQuery) ->
     StartColumn = column(FirstToken) - 1,
     _RestStr = lists:sublist(OrigQuery, StartColumn, length(OrigQuery)).
 
-%% erl_anno module and erl_scan:text were introduced in OTP 18.0
--ifdef(before_OTP_18).
-text(Token) ->
-    proplists:get_value(text, element(2, Token)).
-
-column(Token) ->
-    case element(2, Token) of
-        {_Line, Col} ->
-            Col;
-        Anno when is_list(Anno) ->
-            case {proplists:get_value(column, Anno),
-                  proplists:get_value(location, Anno)} of
-                {Col, undefined} when is_integer(Col) -> Col;
-                {undefined, {_Line, Col}} -> Col;
-                _ -> undefined
-            end
-    end.
-
--else.
 text(Token) ->
     erl_scan:text(Token).
 
 column(Token) ->
     erl_scan:column(Token).
-
--endif.
 
 %% @doc Parse a query string that represents either a module-function-arity
 %% or an xprof-flavoured match-spec fun in Erlang syntax.
