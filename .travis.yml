@@ -3,6 +3,7 @@ branches:
     only:
         - master
         - release_2.0
+        - otp_18_plus
 matrix:
     include:
         - otp_release: 23.0
