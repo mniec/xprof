@@ -231,7 +231,6 @@ all_available() ->
 -else.
 
 %% copy of code:all_available from OTP 23
-%% map converted to key-value list
 -spec all_available() -> [{Module, Filename, Loaded}] when
       Module :: string(),
       Filename :: file:filename() | atom(),
@@ -239,9 +238,9 @@ all_available() ->
 all_available() ->
     case code:get_mode() of
         interactive ->
-            all_available(code:get_path(), []);
+            all_available(code:get_path(), maps:new());
         embedded ->
-            all_available([], [])
+            all_available([], maps:new())
     end.
 all_available([Path|Tail], Acc) ->
     case erl_prim_loader:list_dir(Path) of
@@ -253,10 +252,10 @@ all_available([Path|Tail], Acc) ->
 all_available([], AllModules) ->
     AllLoaded = [{atom_to_list(M),Path,true} || {M,Path} <- code:all_loaded()],
     AllAvailable =
-        lists:map(
-          fun({File, Path}) ->
-                  {filename:rootname(File), filename:append(Path, File), false}
-          end, AllModules),
+        maps:fold(
+          fun(File, Path, Acc) ->
+                  [{filename:rootname(File), filename:append(Path, File), false} | Acc]
+          end, [], AllModules),
     OrderFun = fun F({A,_,_},{B,_,_}) ->
                        F(A,B);
                    F(A,B) ->
@@ -267,9 +266,9 @@ all_available([], AllModules) ->
 all_available(Path, [File | T], Acc) ->
     case filename:extension(File) of
         ".beam" ->
-            case lists:keymember(File, 1, Acc) of
+            case maps:is_key(File, Acc) of
                 false ->
-                    all_available(Path, T, [{File, Path} | Acc]);
+                    all_available(Path, T, Acc#{ File => Path });
                 true ->
                     all_available(Path, T, Acc)
             end;
