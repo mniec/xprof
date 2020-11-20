@@ -1,8 +1,40 @@
-case os:getenv("TRAVIS") of
-  "true" ->
-    JobId   = os:getenv("TRAVIS_JOB_ID"),
-    lists:keystore(coveralls_service_job_id, 1, CONFIG, {coveralls_service_job_id, JobId});
 
-  _ ->
-    CONFIG
-end.
+Travis =
+  fun(Config) ->
+          case os:getenv("TRAVIS") of
+              "true" ->
+                  JobId   = os:getenv("TRAVIS_JOB_ID"),
+
+                  [{coveralls_service_name, "travis-ci"},
+                   {coveralls_service_job_id, JobId} | Config];
+              _ ->
+                  Config
+          end
+  end.
+
+GithubActions =
+  fun(Config) ->
+          case {os:getenv("GITHUB_ACTIONS"), os:getenv("GITHUB_TOKEN")} of
+              {"true", Token} when is_list(Token) ->
+                  io:format(user, "github ~p~n", [is_list(Token) andalso length(Token)]),
+
+                  Config1 = [{coveralls_service_name , "github"},
+                             {coveralls_repo_token, Token},
+                             {coveralls_service_job_id, os:getenv("GITHUB_RUN_ID")},
+                             {coveralls_commit_sha, os:getenv("GITHUB_SHA")},
+                             {coveralls_service_number, os:getenv("GITHUB_RUN_NUMBER")} | Config],
+                  case os:getenv("GITHUB_EVENT_NAME") =:= "pull_request"
+                      andalso string:tokens(os:getenv("GITHUB_REF"), "/") of
+                      [_, "pull", PRNO, _] ->
+                          [{coveralls_service_pull_request, PRNO} | Config1];
+                      _ ->
+                          Config1
+                  end;
+              _ ->
+                  Token = os:getenv("GITHUB_TOKEN"),
+                  io:format(user, "no github ~p~n", [is_list(Token) andalso length(Token)]),
+                  Config
+          end
+  end.
+
+GithubActions(Travis(CONFIG)).
