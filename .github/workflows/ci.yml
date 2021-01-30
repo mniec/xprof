@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'master'
+
+jobs:
+  test:
+    name: OTP ${{ matrix.otp_version }}
+    runs-on: ubuntu-latest
+    container: erlang:${{ matrix.otp_version }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - otp_version: 23
+          elixir_version: 1.10.3
+          new_rebar: true
+          # hdr_histogram up to 0.4.0 fails to compile with OTP 23
+          erl_hist: true
+
+        - otp_version: 22
+          new_rebar: true
+
+        - otp_version: 21
+          new_rebar: true
+          send_coverage: true
+          run_dialyzer: true
+          build_docs: true
+
+        - otp_version: 20
+
+        - otp_version: 19
+
+        - otp_version: 19
+          erl_hist: true
+
+        - otp_version: 18
+          old_cowboy: true
+
+        - otp_version: 17
+          run_dialyzer: true
+          old_cowboy: true
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - if: matrix.new_rebar
+      run: curl -O -L https://s3.amazonaws.com/rebar3/rebar3 && chmod +x ./rebar3
+
+    - if: matrix.erl_hist
+      run: echo "XPROF_ERL_HIST=true" >> $GITHUB_ENV
+
+    - if: matrix.old_cowboy
+      run: echo "COWBOY_VERSION=1.1.2" >> $GITHUB_ENV
+
+    - name: Cache hex packages
+      uses: actions/cache@v2
+      with:
+        path: $HOME/.cache/rebar3
+        key: ${{ matrix.otp_version }}-rebar3-cache
+
+    - run: make test
+
+    - if: matrix.run_dialyzer
+      run: make dialyzer
+      timeout-minutes: 8
+
+    - if: matrix.build_docs
+      run: make doc
+
+    - if: matrix.send_coverage && success()
+      run: ./rebar3 as test coveralls send
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
+
+  test_jiffy:
+    name: Test different json lib (OTP ${{ matrix.otp_version }})
+    runs-on: ubuntu-latest
+
+    container: erlang:${{ matrix.otp_version }}
+
+    strategy:
+      matrix:
+        include:
+        - otp_version: 21
+          new_rebar: true
+
+        - otp_version: 18
+          old_cowboy: true
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - if: matrix.new_rebar
+      run: curl -O -L https://s3.amazonaws.com/rebar3/rebar3 && chmod +x ./rebar3
+
+    - if: matrix.old_cowboy
+      run: echo "COWBOY_VERSION=1.1.2" >> $GITHUB_ENV
+
+    - name: Cache hex packages
+      uses: actions/cache@v2
+      with:
+        path: $HOME/.cache/rebar3
+        key: ${{ matrix.otp_version }}-rebar3-cache-jiffy
+
+    - run: make test_jiffy
+
+  test_front_end:
+    name: Test front-end
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '8'
+
+    - name: Cache build artifacts
+      uses: actions/cache@v2
+      with:
+        path: apps/xprof_gui/priv/node_modules
+        key: test_front_end
+
+    - run: make bootstrap_front_end
+
+    - run: make test_front_end

@@ -1,3 +1,8 @@
+# Currently only travis can
+# - run Elixir tests (OTP 18+)
+# - run on old Erlang version (OTP R16B)
+# - submit coveralls report
+
 language: erlang
 branches:
     only:
@@ -31,18 +36,14 @@ cache:
     directories:
         - $HOME/.cache/rebar3
         - $HOME/.kiex/
-        - apps/xprof_gui/priv/node_modules
 install:
     - if [ -n "$ELIXIR_VERSION" ]; then kiex use "$ELIXIR_VERSION" --default || (kiex install "$ELIXIR_VERSION" && kiex use "$ELIXIR_VERSION" --default); fi
     - if [ -n "$NEW_REBAR" ]; then curl -O -L https://s3.amazonaws.com/rebar3/rebar3 && chmod +x ./rebar3 ; fi
     - ./rebar3 --version
     - ./rebar3 deps
-    - nvm install 8.11.1 && nvm use 8.11.1
-    - make bootstrap_front_end
 script:
     - kiex use "$ELIXIR_VERSION" && make test
-    - if [ $TRAVIS_OTP_RELEASE = "20.3" ]; then make test_front_end; fi
     - if [ $TRAVIS_OTP_RELEASE = "20.3" ]; then make doc dialyzer; fi
     - if [ $TRAVIS_OTP_RELEASE = "17.5" ]; then make dialyzer; fi   # run dialyzer with cowboy 1.x too
-after_success:
-    - if [ $TRAVIS_OTP_RELEASE = "20.3" ]; then ./rebar3 as test coveralls send; fi
+#after_success:
+#    - if [ $TRAVIS_OTP_RELEASE = "20.3" ]; then ./rebar3 as test coveralls send; fi
